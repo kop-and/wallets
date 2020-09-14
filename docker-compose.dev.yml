@@ -1,0 +1,49 @@
+version: '3.4'
+
+# Removed volumes as not supported in CircleCI unless changing to machine executor
+services:
+  db:
+    container_name: app_db
+    image: mariadb:10.2
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  php:
+    container_name: app_wallets
+    image: wallets
+    build:
+      context: .
+      dockerfile: php7-fpm/Dockerfile.dev
+      target: app_stage
+    command: ["/bin/bash", "-c", "php-fpm"]
+    entrypoint: ["/docker-entrypoint-migration.sh"]
+    environment:
+      KERNEL_CLASS: ${KERNEL_CLASS}
+    depends_on:
+      - db
+    volumes:
+      - "./application:/var/www/symfony"
+      - "./logs/symfony:/var/www/symfony/app/logs"
+  nginx:
+    container_name: app_nginx
+    image: nginx
+    build:
+      context: .
+      dockerfile: php7-fpm/Dockerfile.dev
+      target: server_stage
+    ports:
+      - 80:80
+    depends_on:
+      - php
+    entrypoint: []
+    command: ["nginx", "-g", "daemon off;"]
+    volumes:
+      - "./application/web:/var/www/symfony/web"
+      - "./application/vendor:/var/www/symfony/vendor"
+      - "./logs/nginx/:/var/log/nginx"
+
+volumes:
+  mysql-data:
+  mysql-logs:
+

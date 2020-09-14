@@ -1,0 +1,12 @@
+App\Entity\Commission:
+  exclusion_policy: all
+  properties:
+    id:
+      expose: true
+      groups: [accountDetails]
+    type:
+      expose: true
+      groups: [accountDetails]
+    value:
+      expose: true
+      groups: [accountDetails]

@@ -1,0 +1,15 @@
+App\Entity\Account:
+  exclusion_policy: all
+  properties:
+    id:
+      expose: true
+      groups: [accountDetails, userDetails, accountList]
+    number:
+      expose: true
+      groups: [accountDetails, userDetails, accountList]
+    amount:
+      expose: true
+      groups: [accountDetails, userDetails, accountList]
+    user:
+      expose: true
+      groups: [accountDetails]

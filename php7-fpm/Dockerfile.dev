@@ -1,0 +1,93 @@
+# Build the PHP image for php container only.
+FROM php:7.2.7-fpm as app_stage
+ARG TIMEZONE='Europe/Minsk'
+
+RUN apt-get update && apt-get install -y \
+    openssl \
+    git \
+    unzip \
+    libpq-dev \
+    libicu-dev \
+    acl \
+    procps
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer --version
+RUN export COMPOSER_ALLOW_SUPERUSER=1
+
+# Set timezone
+RUN ln -snf /usr/share/zoneinfo/$TIMEZONE /etc/localtime && echo $TIMEZONE > /etc/timezone
+RUN printf '[PHP]\ndate.timezone = "%s"\n' $TIMEZONE > /usr/local/etc/php/conf.d/tzone.ini
+RUN mkdir -p /var/log/supervisor
+
+# Type docker-php-ext-install to see available extensions
+RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql && \
+    docker-php-ext-install -j$(nproc) pdo pdo_mysql pgsql pdo_pgsql opcache bcmath sockets mbstring intl
+
+# install xdebug
+RUN pecl install xdebug-2.6.0
+RUN docker-php-ext-enable xdebug opcache
+RUN echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_connect_back=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.remote_port=9001" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "realpath_cache_size=4096K" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "realpath_cache_ttl=600" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "upload_max_filesize = 100M" >> /usr/local/etc/php/conf.d/php-extra-conf.ini && \
+    echo "post_max_size = 100M" >> /usr/local/etc/php/conf.d/php-extra-conf.ini && \
+    echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/php-extra-conf.ini && \
+    echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/php-extra-conf.ini && \
+    echo "request_terminate_timeout = 300" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_children = 150" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.min_spare_servers = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_spare_servers = 25" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.start_servers = 5" >> /usr/local/etc/php-fpm.d/www.conf
+
+# Enable caching
+RUN echo "wi.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
+    echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
+    echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
+    echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
+
+WORKDIR /var/www/symfony
+
+COPY ./application .
+COPY ./nginx /etc/nginx
+
+#RUN cp app/config/parameters.yml.dist app/config/parameters.yml
+
+COPY ./php7-fpm/docker-entrypoint-migration.sh /docker-entrypoint-migration.sh
+
+RUN chmod +x /docker-entrypoint-migration.sh
+
+RUN composer install -n --ignore-platform-reqs
+
+RUN mkdir -p ./var/logs && mkdir -p ./var/cache && \
+    chown -R www-data:www-data var/logs && \
+    chown -R www-data:www-data var/cache
+
+# Build the nginx server with static files from PHP container
+FROM nginx:1.15.1-alpine as server_stage
+RUN apk update && apk upgrade && apk add bash
+
+COPY --from=app_stage /var/www/symfony/public /var/www/symfony/public
+COPY --from=app_stage /var/www/symfony/vendor/nelmio/api-doc-bundle/Resources/public/ \
+                /var/www/symfony/vendor/nelmio/api-doc-bundle/Resources/public/
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+WORKDIR /var/www/symfony
+
+COPY --from=app_stage /etc/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=app_stage /etc/nginx/symfony.conf /etc/nginx/conf.d
+
+# Forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log \
+	&& ln -sf /dev/stdout /var/log/nginx/symfony_access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/symfony_error.log

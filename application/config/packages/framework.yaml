@@ -1,0 +1,66 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    templating:
+        engines: ['php']
+    secret: '%env(APP_SECRET)%'
+    #csrf_protection: true
+    #http_method_override: true
+
+    # Enables session support. Note that the session will ONLY be started if you read or write from it.
+    # Remove or comment this section to explicitly disable session support.
+    session:
+        handler_id: null
+        cookie_secure: auto
+        cookie_samesite: lax
+
+    #esi: true
+    #fragments: true
+    php_errors:
+        log: true
+
+fos_rest:
+    param_fetcher_listener: true
+    view:
+        view_response_listener: 'force'
+        formats:
+            xml: true
+            json: true
+    format_listener:
+        rules:
+            - { path: '^/', priorities: [ 'json'], fallback_format: json, prefer_extension: false }
+    body_converter:
+        enabled: true
+        validate: true
+    exception:
+        codes:
+            Symfony\Component\Routing\Exception\ResourceNotFoundException: 404
+            Doctrine\ORM\OptimisticLockException: HTTP_CONFLICT
+            Symfony\Component\Security\Core\Exception\AccessDeniedException: 403
+            Symfony\Component\Security\Core\Exception\InsufficientAuthenticationException: 401
+            Symfony\Component\Security\Core\Exception\BadCredentialsException: 400
+            Doctrine\ORM\EntityNotFoundException: 404
+        messages:
+            Symfony\Component\Routing\Exception\ResourceNotFoundException: true
+            Symfony\Component\Security\Core\Exception\AccessDeniedException: true
+            Symfony\Component\HttpKernel\Exception\BadRequestHttpException: true
+            Symfony\Component\HttpKernel\Exception\HttpException: true
+            Symfony\Component\Security\Core\Exception\BadCredentialsException: true
+            Doctrine\ORM\EntityNotFoundException: true
+    body_listener: true
+
+jms_serializer:
+    metadata:
+        cache: file
+        debug: '%kernel.debug%'
+        auto_detection: false
+        directories:
+            app:
+                namespace_prefix: "Entity"
+                path: "%kernel.root_dir%/Resources/config/serializer"
+    handlers:
+        datetime:
+            default_format: "Y-m-d\\TH:i:s" # ATOM
+            default_timezone: "UTC" # defaults to whatever timezone set in php.ini or via date_default_timezone_set
+    default_context:
+        serialization:
+            serialize_null: true

@@ -1,0 +1,45 @@
+App\Entity\User:
+  exclusion_policy: all
+  properties:
+    id:
+      expose: true
+      groups: [userDetails, userList, accountDetails]
+    username:
+      expose: true
+      groups: [userDetails, userList, accountDetails]
+    password:
+      expose: true
+      groups: []
+    retypedPassword:
+      expose: true
+      groups: []
+    newPassword:
+      expose: true
+      groups: []
+    newRetypedPassword:
+      expose: true
+      groups: []
+    oldPassword:
+      expose: true
+      groups: []
+    name:
+      expose: true
+      groups: [userDetails]
+    email:
+      expose: true
+      groups: [userDetails]
+    roles:
+      expose: true
+      groups: [userDetails]
+    passwordChangeDate:
+      expose: true
+      groups: [userDetails]
+    enabled:
+      expose: true
+      groups: [userDetails]
+    confirmationToken:
+      expose: true
+      groups: []
+    accounts:
+      expose: true
+      groups: [userDetails]
