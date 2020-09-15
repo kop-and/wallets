@@ -13,15 +13,12 @@ use FOS\RestBundle\Controller\Annotations\Put;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use JMS\Serializer\SerializationContext;
-use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Doctrine\ORM\EntityManagerInterface;
 
 use Swagger\Annotations as SWG;
 use FOS\RestBundle\Controller\Annotations as Rest;
@@ -33,28 +30,6 @@ use FOS\RestBundle\Controller\Annotations as Rest;
  */
 class UserController extends AbstractApiController
 {
-
-    /**
-     * @var EntityManagerInterface $em
-     */
-    private $em;
-    /**
-     * @var SerializerInterface $serializer
-     */
-    private $serialize;
-
-    /**
-     * @var AccountManager $accountManager
-     */
-    private $accountManager;
-
-    public function _constructor(SerializerInterface $serialize, AccountManager $accountManager, EntityManagerInterface $em)
-    {
-        $this->serialize = $serialize;
-        $this->accountManager = $accountManager;
-        $this->em = $em;
-    }
-
     /**
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="Not Found")
@@ -78,13 +53,14 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param UserRepository $repository
+     * @param SerializerInterface $serialize
      * @return Response
      */
-    public function getUsersAction(UserRepository $repository)
+    public function getUsersAction(UserRepository $repository, SerializerInterface $serialize)
     {
-        return $users = $repository->findAll();
+        $users = $repository->findAll();
 
-        $list = $this->serialize->serialize(
+        $list = $serialize->serialize(
             $users,
             'json',
             SerializationContext::create()->setGroups(['userList'])->setSerializeNull(true)
@@ -110,9 +86,10 @@ class UserController extends AbstractApiController
      *
      * @param Request $request
      * @param User $user
+     * @param AccountManager $accountManager
      * @return Account|JsonResponse
      */
-    public function addAccountAction(Request $request, User $user)
+    public function addAccountAction(Request $request, User $user, AccountManager $accountManager)
     {
         $form = $this->createForm(AccountCreateType::class, new Account());
 
@@ -122,12 +99,6 @@ class UserController extends AbstractApiController
             return $this->getFormErrorResponse($form);
         }
 
-        $account = $form->getData();
-        $account->setUser($user);
-        $this->getDoctrine()->getManager()->persist($account);
-        $this->getDoctrine()->getManager()->flush();
-
-        return $account;
-        //return $manager->createAccount($form->getData(), $user);
+        return $accountManager->createAccount($form->getData(), $user);
     }
 }

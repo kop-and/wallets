@@ -3,9 +3,11 @@
 namespace App\Managers;
 
 use App\Entity\Account;
+use App\Entity\Commission;
 use App\Entity\User;
 use App\Repository\AccountRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class AccountManager
 {
@@ -37,5 +39,32 @@ class AccountManager
         $this->em->flush();
 
         return $account;
+    }
+
+    /**
+     * @param Account $fromAccount
+     * @param Account $toAccount
+     * @param int $amountTransfer
+     * @return bool
+     */
+    public function transferAmount(Account $fromAccount, Account $toAccount, int $amountTransfer)
+    {
+        /**
+         * @var Commission $commission
+         */
+        $commission = $this->em->getRepository(Commission::class)->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
+
+        if ($fromAccount->getAmount() < ($amountTransfer + $amountTransfer * $commission->getValue())) {
+            throw new MethodNotAllowedHttpException([], 'The transfer amount is too large, there is not enough amount on the wallet');
+        }
+
+        $fromAccount->setAmount($fromAccount->getAmount() - ($amountTransfer + $amountTransfer * $commission->getValue()));
+        $toAccount->setAmount($toAccount->getAmount() + $amountTransfer);
+
+        $this->em->persist($fromAccount);
+        $this->em->persist($toAccount);
+        $this->em->flush();
+
+        return true;
     }
 }

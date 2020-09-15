@@ -1,7 +1,6 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
-    templating:
-        engines: ['php']
+    templating: false
     secret: '%env(APP_SECRET)%'
     #csrf_protection: true
     #http_method_override: true
@@ -55,7 +54,7 @@ jms_serializer:
         auto_detection: false
         directories:
             app:
-                namespace_prefix: "Entity"
+                namespace_prefix: "App\\Entity"
                 path: "%kernel.root_dir%/Resources/config/serializer"
     handlers:
         datetime:

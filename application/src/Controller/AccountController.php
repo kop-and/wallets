@@ -2,22 +2,16 @@
 
 namespace App\Controller;
 
-use App\Entity\Commission;
 use App\Form\TransactionAccountType;
 use App\Managers\AccountManager;
 use App\Repository\AccountRepository;
-use App\Form\AccountCreateType;
-use FOS\RestBundle\Controller\AbstractFOSRestController;
-use FOS\RestBundle\Controller\Annotations\Delete;
 use FOS\RestBundle\Controller\Annotations\Get;
 use FOS\RestBundle\Controller\Annotations\Post;
 use FOS\RestBundle\Controller\Annotations\Put;
 use App\Entity\Account;
 use JMS\Serializer\SerializationContext;
-use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,16 +30,6 @@ use FOS\RestBundle\Controller\Annotations as Rest;
 class AccountController extends AbstractApiController
 {
     /**
-     * @var SerializerInterface $serializer
-     */
-    private $serialize;
-
-    public function _constructor(SerializerInterface $serialize)
-    {
-        $this->serialize = $serialize;
-    }
-
-    /**
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="Not Found")
      *
@@ -53,14 +37,15 @@ class AccountController extends AbstractApiController
      * @SWG\Tag(name="accounts")
      *
      * @param AccountRepository $repository
-     * @return Response
+     * @param SerializerInterface $serialize
+     * @return array|Response
      */
-    public function getAccountsAction(AccountRepository $repository)
+    public function getAccountsAction(AccountRepository $repository, SerializerInterface $serialize)
     {
-        return $accounts = $repository->findAll();
+        $accounts = $repository->findAll();
 
 
-        $list = $this->serialize->serialize(
+        $list = $serialize->serialize(
             $accounts,
             'json',
             SerializationContext::create()->setGroups(['accountList'])->setSerializeNull(true)
@@ -85,9 +70,10 @@ class AccountController extends AbstractApiController
      * @Route("/transaction", methods={"PUT"})
      *
      * @param Request $request
-     * @return array|JsonResponse
+     * @param AccountManager $accountManager
+     * @return JsonResponse|Response
      */
-    public function transactionAccountsAction(Request $request)
+    public function transactionAccountsAction(Request $request, AccountManager $accountManager)
     {
         /**
          * @var Account $fromAccount
@@ -112,22 +98,13 @@ class AccountController extends AbstractApiController
         }
 
         $amountTransfer = $request->get('amount');
-        /**
-         * @var Commission $commission
-         */
-        $commission = $this->getDoctrine()->getRepository(Commission::class)->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
 
-        if ($fromAccount->getAmount() < ($amountTransfer + $amountTransfer * $commission->getValue())) {
-            throw new MethodNotAllowedHttpException([], 'The transfer amount is too large, there is not enough amount on the wallet');
+        try {
+            $accountManager->transferAmount($fromAccount, $toAccount, $amountTransfer);
+        } catch (\Exception $exception) {
+            return new JsonResponse($exception->getMessage(), Response::HTTP_BAD_REQUEST);
         }
 
-        $fromAccount->setAmount($fromAccount->getAmount() - ($amountTransfer + $amountTransfer * $commission->getValue()));
-        $toAccount->setAmount($toAccount->getAmount() + $amountTransfer);
-
-        $this->getDoctrine()->getManager()->persist($fromAccount);
-        $this->getDoctrine()->getManager()->persist($toAccount);
-        $this->getDoctrine()->getManager()->flush();
-
-        return ['success' => true];
+        return new JsonResponse(['success' => true], Response::HTTP_OK);
     }
 }
