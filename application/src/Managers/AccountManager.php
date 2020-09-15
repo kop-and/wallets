@@ -58,6 +58,10 @@ class AccountManager
             throw new MethodNotAllowedHttpException([], 'The transfer amount is too large, there is not enough amount on the wallet');
         }
 
+        if ($fromAccount->getId() === $toAccount->getId()) {
+            throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own account');
+        }
+
         $fromAccount->setAmount($fromAccount->getAmount() - ($amountTransfer + $amountTransfer * $commission->getValue()));
         $toAccount->setAmount($toAccount->getAmount() + $amountTransfer);
 
