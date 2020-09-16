@@ -117,8 +117,7 @@ class User implements UserInterface
     /**
      * @var ArrayCollection|Wallet[]
      *
-     * @ORM\OneToMany(targetEntity="Wallet", mappedBy="user",
-     *     cascade={"all"})
+     * @ORM\OneToMany(targetEntity="App\Entity\Wallet", mappedBy="user")
      */
     private $wallets;
 
@@ -238,7 +237,7 @@ class User implements UserInterface
         return null;
     }
 
-    public function eraseCredentials()
+    public function eraseCredentials(): void
     {
 
     }

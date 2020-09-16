@@ -1,0 +1,12 @@
+App\Entity\Transaction:
+  exclusion_policy: all
+  properties:
+    id:
+      expose: true
+      groups: []
+    wallet:
+      expose: true
+      groups: []
+    amount:
+      expose: true
+      groups: []

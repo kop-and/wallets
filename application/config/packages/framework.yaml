@@ -20,13 +20,10 @@ framework:
 fos_rest:
     param_fetcher_listener: true
     view:
-        view_response_listener: 'force'
-        formats:
-            xml: true
-            json: true
+        view_response_listener:  true
     format_listener:
         rules:
-            - { path: '^/', priorities: [ 'json'], fallback_format: json, prefer_extension: false }
+            - { path: ^/api, prefer_extension: true, fallback_format: json, priorities: [ json ] }
     body_converter:
         enabled: true
         validate: true
@@ -49,12 +46,9 @@ fos_rest:
 
 jms_serializer:
     metadata:
-        cache: file
-        debug: '%kernel.debug%'
-        auto_detection: false
         directories:
             App:
-                namespace_prefix: App\Entity
+                namespace_prefix: "App\\Entity"
                 path: "%kernel.root_dir%/Resources/config/serializer"
     handlers:
         datetime:

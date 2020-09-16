@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Repository\CommissionRepository;
 use App\Repository\WalletRepository;
 use App\Services\CalculationTransfer;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -86,12 +87,12 @@ class WalletManager
     public function transferAmount(int $fromWalletId, int $toWalletId, int $amountTransfer): bool
     {
         /** @var Wallet $fromWallet */
-        $fromWallet = $this->walletRepository->findOneBy(['id' => $fromWalletId]);
+        $fromWallet = $this->walletRepository->find($fromWalletId);
         if (!$fromWallet) {
             throw new NotFoundHttpException('From Wallet was not found');
         }
         /** @var Wallet $toWallet */
-        $toWallet = $this->walletRepository->findOneBy(['id' => $toWalletId]);
+        $toWallet = $this->walletRepository->find($toWalletId);
         if (!$toWallet) {
             throw new NotFoundHttpException('To Wallet was not found');
         }
@@ -99,7 +100,12 @@ class WalletManager
         /** @var Commission $commission */
         $commission = $this->commissionRepository->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
 
-        if ($fromWallet->getAmount() < ($amountTransfer + $amountTransfer * ($commission->getValue() / 100))) {
+        $amount = $this->calculationTransfer->calculation(
+            $amountTransfer,
+            $commission->getValue()
+        );
+
+        if ($fromWallet->getAmount() < $amount) {
             throw new MethodNotAllowedHttpException(
                 [],
                 'The transfer amount is too large, there is not enough amount on the wallet'
@@ -110,26 +116,25 @@ class WalletManager
             throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
         }
 
-        $amount = $this->calculationTransfer->calculation(
-            $amountTransfer,
-            $commission->getValue()
-        );
-
-        $this->transfer($fromWallet, $toWallet, $amountTransfer, $amount);
+        $this->transfer($fromWalletId, $toWalletId, $amountTransfer, $amount);
 
         return true;
     }
 
     /**
-     * @param Wallet $fromWallet
-     * @param Wallet $toWallet
+     * @param int $fromWalletId
+     * @param int $toWalletId
      * @param int $amountTransfer
      * @param int $amount
      * @throws \Throwable
      */
-    private function transfer(Wallet $fromWallet, Wallet $toWallet, int $amountTransfer, int $amount): void
+    private function transfer(int $fromWalletId, int $toWalletId, int $amountTransfer, int $amount): void
     {
         $this->em->beginTransaction();
+        /** @var Wallet $fromWallet */
+        $fromWallet = $this->walletRepository->find($fromWalletId, LockMode::PESSIMISTIC_WRITE);
+        /** @var Wallet $toWallet */
+        $toWallet = $this->walletRepository->find($toWalletId, LockMode::PESSIMISTIC_WRITE);
         try {
             $fromWallet->setAmount($fromWallet->getAmount() - $amount);
             $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);

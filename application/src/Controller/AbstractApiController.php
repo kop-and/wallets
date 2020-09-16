@@ -1,9 +1,8 @@
 <?php
 namespace App\Controller;
 
-use FOS\RestBundle\View\View;
-use FOS\RestBundle\Context\Context;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -19,13 +18,11 @@ abstract class AbstractApiController extends AbstractController
      * @param $content
      * @param string $status
      * @param $code
-     * @return View
+     * @return JsonResponse
      */
-    public function getResponse($content, $status = self::STATUS_SUCCESS, $code = Response::HTTP_OK)
+    public function getResponse($content, $status = self::STATUS_SUCCESS, $code = Response::HTTP_OK): JsonResponse
     {
-        $view = View::create(['status'  => $status, 'content' => $content], $code);
-        $view->setContext(new Context());
-        return $view;
+        return new JsonResponse(['status'  => $status, 'content' => $content], $code);
     }
 
     /**
@@ -34,7 +31,7 @@ abstract class AbstractApiController extends AbstractController
      * @param  ConstraintViolationListInterface $violations
      * @return array
      */
-    protected function getConstraintViolations(ConstraintViolationListInterface $violations)
+    protected function getConstraintViolations(ConstraintViolationListInterface $violations): array
     {
         $errors = [];
 
@@ -45,12 +42,10 @@ abstract class AbstractApiController extends AbstractController
             /*
              * We try to use payload property path before take it from getPropertyPath
              */
-            $propertyPath = isset($violation->getConstraint()->payload['propertyPath']) ?
-                $violation->getConstraint()->payload['propertyPath'] :
-                $violation->getPropertyPath();
+            $propertyPath = $violation->getConstraint()->payload['propertyPath'] ?? $violation->getPropertyPath();
 
             $errors[$propertyPath] = [
-                'code'    => isset($constraint->payload['code']) ? $constraint->payload['code'] : $violation->getMessage(),
+                'code'    => $constraint->payload['code'] ?? $violation->getMessage(),
                 'message' => $violation->getMessage()
             ];
         }
@@ -62,9 +57,9 @@ abstract class AbstractApiController extends AbstractController
      * Response view for request data validation violations
      *
      * @param  ConstraintViolationListInterface $violations
-     * @return View
+     * @return JsonResponse
      */
-    protected function getValidationErrorResponse(ConstraintViolationListInterface $violations)
+    protected function getValidationErrorResponse(ConstraintViolationListInterface $violations): JsonResponse
     {
         return $this->getResponse($this->getConstraintViolations($violations), self::STATUS_ERROR, Response::HTTP_BAD_REQUEST);
     }
@@ -74,7 +69,7 @@ abstract class AbstractApiController extends AbstractController
      * @param array $fields
      * @return array
      */
-    protected function getParamsFromRequest(Request $request, $fields = [])
+    protected function getParamsFromRequest(Request $request, $fields = []): array
     {
         $params = [];
         foreach ($fields as $field) {

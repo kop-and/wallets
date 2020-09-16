@@ -8,8 +8,6 @@ use App\Managers\WalletManager;
 use FOS\RestBundle\Controller\Annotations\Get;
 use App\Entity\User;
 use App\Repository\UserRepository;
-use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,11 +31,11 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param User $user
-     * @return Response
+     * @return JsonResponse
      */
-    public function getUserAction(User $user): Response
+    public function getUserAction(User $user): JsonResponse
     {
-        return new Response($user, Response::HTTP_OK);
+        return new JsonResponse($user);
     }
 
     /**
@@ -48,27 +46,16 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param UserRepository $repository
-     * @param SerializerInterface $serialize
-     * @return Response
+     * @return JsonResponse
      */
     public function getUsersAction(
-        UserRepository $repository,
-        SerializerInterface $serialize
-    ): Response
+        UserRepository $repository
+    ): JsonResponse
     {
-        $users = $repository->findAll();
-
-        $list = $serialize->serialize(
-            $users,
-            'json',
-            SerializationContext::create()->setGroups(['userList'])->setSerializeNull(true)
-        );
-
-        return new Response($list, Response::HTTP_OK);
+        return new JsonResponse($repository->findAll());
     }
 
     /**
-     *
      * @SWG\Post(
      *      summary="Add wallet to user",
      *      @SWG\Parameter(
@@ -89,14 +76,14 @@ class UserController extends AbstractApiController
      * @param User $user
      * @param WalletManager $walletManager
      * @param ValidatorInterface $validator
-     * @return Response|Wallet
+     * @return JsonResponse
      */
     public function addWalletAction(
         Request $request,
         User $user,
         WalletManager $walletManager,
         ValidatorInterface $validator
-    )
+    ): JsonResponse
     {
         $wallet = new Wallet();
         $wallet->setNumber($request->request->get('number'));
@@ -106,15 +93,15 @@ class UserController extends AbstractApiController
         if (count($errors) > 0) {
             $errorsString = (string) $errors;
 
-            return new Response($errorsString);
+            return new JsonResponse($errorsString, Response::HTTP_METHOD_NOT_ALLOWED);
         }
 
         try {
-            $updateUser = $walletManager->createWallet($wallet, $user);
+            $newWallet = $walletManager->createWallet($wallet, $user);
         } catch (\Exception $exception) {
             return new JsonResponse($exception->getMessage(), Response::HTTP_METHOD_NOT_ALLOWED);
         }
 
-        return $updateUser;
+        return new JsonResponse($newWallet);
     }
 }

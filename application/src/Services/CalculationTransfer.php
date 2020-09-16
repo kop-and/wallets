@@ -12,8 +12,6 @@ class CalculationTransfer
      */
     public function calculation(int $amountTransfer, int $commission): int
     {
-        $amount = (int)($amountTransfer + $amountTransfer * ($commission / 100));
-
-        return $amount;
+        return (int)($amountTransfer + $amountTransfer * ($commission / 100));
     }
 }

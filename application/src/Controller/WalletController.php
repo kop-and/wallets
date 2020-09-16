@@ -6,8 +6,6 @@ namespace App\Controller;
 use App\Managers\WalletManager;
 use App\Repository\WalletRepository;
 use FOS\RestBundle\Controller\Annotations\Get;
-use JMS\Serializer\SerializationContext;
-use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,23 +28,13 @@ class WalletController extends AbstractApiController
      * @SWG\Tag(name="wallets")
      *
      * @param WalletRepository $repository
-     * @param SerializerInterface $serialize
-     * @return array|Response
+     * @return JsonResponse
      */
     public function getWalletsAction(
-        WalletRepository $repository,
-        SerializerInterface $serialize
-    ): Response
+        WalletRepository $repository
+    ): JsonResponse
     {
-        $wallets = $repository->findAll();
-
-        $list = $serialize->serialize(
-            $wallets,
-            'json',
-            SerializationContext::create()->setGroups(['walletList'])->setSerializeNull(true)
-        );
-
-        return new Response($list, Response::HTTP_OK);
+        return new JsonResponse($repository->findAll());
     }
 
     /**
@@ -88,6 +76,6 @@ class WalletController extends AbstractApiController
             return new JsonResponse($exception->getMessage(), Response::HTTP_BAD_REQUEST);
         }
 
-        return new JsonResponse(['success' => true], Response::HTTP_OK);
+        return new JsonResponse(['success' => true]);
     }
 }
