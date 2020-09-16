@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-
 class ConvertAmount
 {
     public const COEFFICIENT = 100000000;

@@ -6,13 +6,11 @@ namespace App\Controller;
 use App\Managers\WalletManager;
 use App\Repository\WalletRepository;
 use FOS\RestBundle\Controller\Annotations\Get;
-use App\Entity\Wallet;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 use Swagger\Annotations as SWG;
@@ -72,28 +70,20 @@ class WalletController extends AbstractApiController
      *
      * @param Request $request
      * @param WalletManager $walletManager
-     * @param WalletRepository $walletRepository
      * @return JsonResponse
+     * @throws \Throwable
      */
     public function transactionWalletsAction(
         Request $request,
-        WalletManager $walletManager,
-        WalletRepository $walletRepository
+        WalletManager $walletManager
     ): JsonResponse
     {
-        /** @var Wallet $fromWallet */
-        $fromWallet = $walletRepository->findOneBy(['id' => $request->request->get('fromWallet')]);
-        if (!$fromWallet) {
-            throw new NotFoundHttpException('From Wallet was not found');
-        }
-        /** @var Wallet $toWallet */
-        $toWallet = $walletRepository->findOneBy(['id' => $request->request->get('toWallet')]);
-        if (!$toWallet) {
-            throw new NotFoundHttpException('To Wallet was not found');
-        }
-
         try {
-            $walletManager->transferAmount($fromWallet, $toWallet, $request->request->get('amount'));
+            $walletManager->transferAmount(
+                $request->request->get('fromWallet'),
+                $request->request->get('toWallet'),
+                $request->request->get('amount')
+            );
         } catch (\Exception $exception) {
             return new JsonResponse($exception->getMessage(), Response::HTTP_BAD_REQUEST);
         }

@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 namespace App\Managers;
 
+use App\Entity\Transaction;
 use App\Entity\Wallet;
 use App\Entity\Commission;
 use App\Entity\User;
 use App\Repository\CommissionRepository;
+use App\Repository\WalletRepository;
 use App\Services\CalculationTransfer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class WalletManager
 {
@@ -29,20 +32,28 @@ class WalletManager
     private $calculationTransfer;
 
     /**
+     * @var WalletRepository
+     */
+    private $walletRepository;
+
+    /**
      * WalletManager constructor.
      * @param EntityManagerInterface $em
      * @param CommissionRepository $commissionRepository
      * @param CalculationTransfer $calculationTransfer
+     * @param WalletRepository $walletRepository
      */
     public function __construct(
         EntityManagerInterface $em,
         CommissionRepository $commissionRepository,
-        CalculationTransfer $calculationTransfer
+        CalculationTransfer $calculationTransfer,
+        WalletRepository $walletRepository
     )
     {
         $this->em = $em;
         $this->commissionRepository = $commissionRepository;
         $this->calculationTransfer = $calculationTransfer;
+        $this->walletRepository = $walletRepository;
     }
 
     /**
@@ -66,13 +77,25 @@ class WalletManager
     }
 
     /**
-     * @param Wallet $fromWallet
-     * @param Wallet $toWallet
+     * @param int $fromWalletId
+     * @param int $toWalletId
      * @param int $amountTransfer
      * @return bool
+     * @throws \Throwable
      */
-    public function transferAmount(Wallet $fromWallet, Wallet $toWallet, int $amountTransfer): bool
+    public function transferAmount(int $fromWalletId, int $toWalletId, int $amountTransfer): bool
     {
+        /** @var Wallet $fromWallet */
+        $fromWallet = $this->walletRepository->findOneBy(['id' => $fromWalletId]);
+        if (!$fromWallet) {
+            throw new NotFoundHttpException('From Wallet was not found');
+        }
+        /** @var Wallet $toWallet */
+        $toWallet = $this->walletRepository->findOneBy(['id' => $toWalletId]);
+        if (!$toWallet) {
+            throw new NotFoundHttpException('To Wallet was not found');
+        }
+
         /** @var Commission $commission */
         $commission = $this->commissionRepository->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
 
@@ -87,13 +110,49 @@ class WalletManager
             throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
         }
 
-        $newAmount = $this->calculationTransfer->calculation($fromWallet->getAmount(), $amountTransfer, $commission->getValue());
+        $amount = $this->calculationTransfer->calculation(
+            $amountTransfer,
+            $commission->getValue()
+        );
 
-        $fromWallet->setAmount($newAmount);
-        $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);
-
-        $this->em->flush();
+        $this->transfer($fromWallet, $toWallet, $amountTransfer, $amount);
 
         return true;
+    }
+
+    /**
+     * @param Wallet $fromWallet
+     * @param Wallet $toWallet
+     * @param int $amountTransfer
+     * @param int $amount
+     * @throws \Throwable
+     */
+    private function transfer(Wallet $fromWallet, Wallet $toWallet, int $amountTransfer, int $amount): void
+    {
+        $this->em->beginTransaction();
+        try {
+            $fromWallet->setAmount($fromWallet->getAmount() - $amount);
+            $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);
+
+            $transactionFrom =
+                (new Transaction())
+                    ->setWallet($fromWallet)
+                    ->setAmount(-$amount)
+            ;
+            $transactionTo =
+                (new Transaction())
+                    ->setWallet($toWallet)
+                    ->setAmount($amountTransfer)
+            ;
+            $this->em->persist($transactionFrom);
+            $this->em->persist($transactionTo);
+
+            $this->em->flush();
+            $this->em->commit();
+        } catch (\Throwable $exception) {
+            $this->em->rollBack();
+
+            throw $exception;
+        }
     }
 }

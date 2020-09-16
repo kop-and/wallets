@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -44,6 +45,14 @@ class Wallet
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=true)
      */
     private $user;
+
+    /**
+     * @var ArrayCollection|Transaction[]
+     *
+     * @ORM\OneToMany(targetEntity="Transaction", mappedBy="wallets",
+     *     cascade={"all"})
+     */
+    private $transactions;
 
     public function __construct()
     {
@@ -104,5 +113,58 @@ class Wallet
     public function setUser(User $user): void
     {
         $this->user = $user;
+    }
+
+    /**
+     * @return array|Transaction[]
+     */
+    public function getTransactions(): array
+    {
+        return $this->transactions->toArray();
+    }
+
+    /**
+     * @param array|Wallet[] $transactions
+     *
+     * @return Wallet
+     */
+    public function setTransactions(array $transactions): self
+    {
+        $this->transactions->clear();
+
+        foreach ($transactions as $transaction) {
+            $this->addTransaction($transaction);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param Transaction $transaction
+     *
+     * @return Wallet
+     */
+    public function addTransaction(Transaction $transaction): self
+    {
+        if (!$this->transactions->contains($transaction)) {
+            $transaction->setWallet($this);
+            $this->transactions->add($transaction);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param Transaction $transaction
+     *
+     * @return Wallet
+     */
+    public function removeTransaction(Transaction $transaction): self
+    {
+        if ($this->transactions->contains($transaction)) {
+            $this->transactions->removeElement($transaction);
+        }
+
+        return $this;
     }
 }

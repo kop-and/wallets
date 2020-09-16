@@ -221,10 +221,13 @@ class User implements UserInterface
 
     /**
      * @param array $roles
+     * @return User
      */
-    public function setRoles(array $roles)
+    public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+
+        return $this;
     }
 
     /**
@@ -250,10 +253,13 @@ class User implements UserInterface
 
     /**
      * @param $retypedPassword
+     * @return User
      */
-    public function setRetypedPassword($retypedPassword): void
+    public function setRetypedPassword($retypedPassword): self
     {
         $this->retypedPassword = $retypedPassword;
+
+        return $this;
     }
 
     /**
@@ -266,10 +272,13 @@ class User implements UserInterface
 
     /**
      * @param $newPassword
+     * @return User
      */
-    public function setNewPassword($newPassword): void
+    public function setNewPassword($newPassword): self
     {
         $this->newPassword = $newPassword;
+
+        return $this;
     }
 
     /**
@@ -282,10 +291,13 @@ class User implements UserInterface
 
     /**
      * @param $newRetypedPassword
+     * @return User
      */
-    public function setNewRetypedPassword($newRetypedPassword): void
+    public function setNewRetypedPassword($newRetypedPassword): self
     {
         $this->newRetypedPassword = $newRetypedPassword;
+
+        return $this;
     }
 
     /**
@@ -298,10 +310,13 @@ class User implements UserInterface
 
     /**
      * @param $oldPassword
+     * @return User
      */
-    public function setOldPassword($oldPassword): void
+    public function setOldPassword($oldPassword): self
     {
         $this->oldPassword = $oldPassword;
+
+        return $this;
     }
 
     /**
@@ -312,9 +327,15 @@ class User implements UserInterface
         return $this->passwordChangeDate;
     }
 
-    public function setPasswordChangeDate($passwordChangeDate): void
+    /**
+     * @param $passwordChangeDate
+     * @return User
+     */
+    public function setPasswordChangeDate($passwordChangeDate): self
     {
         $this->passwordChangeDate = $passwordChangeDate;
+
+        return $this;
     }
 
     /**
@@ -325,19 +346,34 @@ class User implements UserInterface
         return $this->enabled;
     }
 
-    public function setEnabled($enabled): void
+    /**
+     * @param $enabled
+     * @return User
+     */
+    public function setEnabled($enabled): self
     {
         $this->enabled = $enabled;
+
+        return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getConfirmationToken(): ?string
     {
         return $this->confirmationToken;
     }
 
-    public function setConfirmationToken($confirmationToken): void
+    /**
+     * @param $confirmationToken
+     * @return User
+     */
+    public function setConfirmationToken($confirmationToken): self
     {
         $this->confirmationToken = $confirmationToken;
+
+        return $this;
     }
 
     public function __toString(): string
@@ -348,7 +384,7 @@ class User implements UserInterface
     /**
      * @return array|Wallet[]
      */
-    public function getwallets()
+    public function getWallets(): array
     {
         return $this->wallets->toArray();
     }
@@ -358,7 +394,7 @@ class User implements UserInterface
      *
      * @return User
      */
-    public function setwallets(array $wallets): self
+    public function setWallets(array $wallets): self
     {
         $this->wallets->clear();
 
