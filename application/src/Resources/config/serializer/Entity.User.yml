@@ -3,10 +3,10 @@ App\Entity\User:
   properties:
     id:
       expose: true
-      groups: [userDetails, userList, accountDetails]
+      groups: [userDetails, userList, walletDetails]
     username:
       expose: true
-      groups: [userDetails, userList, accountDetails]
+      groups: [userDetails, userList, walletDetails]
     password:
       expose: true
       groups: []
@@ -40,6 +40,6 @@ App\Entity\User:
     confirmationToken:
       expose: true
       groups: []
-    accounts:
+    wallets:
       expose: true
       groups: [userDetails]

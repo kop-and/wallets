@@ -14,6 +14,7 @@ parameters:
     env(DATABASE_USER): root
     database_password: '%env(DATABASE_PASSWORD)%'
     env(DATABASE_PASSWORD): root
+    jms_serializer.camel_case_naming_strategy.class: JMS\Serializer\Naming\IdenticalPropertyNamingStrategy
 
 services:
     # default configuration for services in *this* file
@@ -44,4 +45,10 @@ services:
         public: false
         arguments:
             - '@doctrine'
+
+    App\Services\ConvertAmount:
+        arguments: []
+
+    App\Services\CalculationTransfer:
+        arguments: []
 

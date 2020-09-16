@@ -1,27 +1,22 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Account;
-use App\Managers\AccountManager;
-use App\Form\AccountCreateType;
-use FOS\RestBundle\Controller\AbstractFOSRestController;
-use FOS\RestBundle\Controller\Annotations\Delete;
+use App\Entity\Wallet;
+use App\Managers\WalletManager;
 use FOS\RestBundle\Controller\Annotations\Get;
-use FOS\RestBundle\Controller\Annotations\Post;
-use FOS\RestBundle\Controller\Annotations\Put;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
-use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 use Swagger\Annotations as SWG;
-use FOS\RestBundle\Controller\Annotations as Rest;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Class UserController
@@ -38,11 +33,11 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param User $user
-     * @return User
+     * @return Response
      */
-    public function getUserAction(User $user)
+    public function getUserAction(User $user): Response
     {
-        return $user;
+        return new Response($user, Response::HTTP_OK);
     }
 
     /**
@@ -56,7 +51,10 @@ class UserController extends AbstractApiController
      * @param SerializerInterface $serialize
      * @return Response
      */
-    public function getUsersAction(UserRepository $repository, SerializerInterface $serialize)
+    public function getUsersAction(
+        UserRepository $repository,
+        SerializerInterface $serialize
+    ): Response
     {
         $users = $repository->findAll();
 
@@ -72,33 +70,51 @@ class UserController extends AbstractApiController
     /**
      *
      * @SWG\Post(
-     *      summary="Add account to user",
+     *      summary="Add wallet to user",
      *      @SWG\Parameter(
      *          name="body",
      *          description="",
      *          in="body",
-     *          @Model(type=\App\Form\AccountCreateType::class)
+     *          @SWG\Schema(
+     *              type="object",
+     *              @SWG\Property(property="number", type="string", example="")
+     *          )
      *      ),
      * @SWG\Response(response=200, description="Success")
      * )
      * @SWG\Tag(name="users")
-     * @Route("/{id}/account", methods={"POST"})
+     * @Route("/{id}/wallet", methods={"POST"})
      *
      * @param Request $request
      * @param User $user
-     * @param AccountManager $accountManager
-     * @return Account|JsonResponse
+     * @param WalletManager $walletManager
+     * @param ValidatorInterface $validator
+     * @return Response|Wallet
      */
-    public function addAccountAction(Request $request, User $user, AccountManager $accountManager)
+    public function addWalletAction(
+        Request $request,
+        User $user,
+        WalletManager $walletManager,
+        ValidatorInterface $validator
+    )
     {
-        $form = $this->createForm(AccountCreateType::class, new Account());
+        $wallet = new Wallet();
+        $wallet->setNumber($request->request->get('number'));
 
-        $form->submit($request->request->all());
+        $errors = $validator->validate($wallet);
 
-        if (!$form->isValid()) {
-            return $this->getFormErrorResponse($form);
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return new Response($errorsString);
         }
 
-        return $accountManager->createAccount($form->getData(), $user);
+        try {
+            $updateUser = $walletManager->createWallet($wallet, $user);
+        } catch (\Exception $exception) {
+            return new JsonResponse($exception->getMessage(), Response::HTTP_METHOD_NOT_ALLOWED);
+        }
+
+        return $updateUser;
     }
 }

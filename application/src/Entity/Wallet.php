@@ -1,15 +1,17 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AccountRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\WalletRepository")
  * @UniqueEntity("number")
  */
-class Account
+class Wallet
 {
     /**
      * @ORM\Id()
@@ -22,20 +24,23 @@ class Account
      * @var string
      *
      * @ORM\Column(type="string", length=40, nullable=true)
+     *
+     * @Assert\NotBlank
+     * @Assert\Length(min=10, max=30)
      */
     private $number;
 
     /**
-     * @var float
+     * @var int
      *
-     * @ORM\Column(name="amount", type="float")
+     * @ORM\Column(name="amount", type="integer")
      */
     private $amount;
 
     /**
      * @var User
      *
-     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="accounts")
+     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="wallets")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=true)
      */
     private $user;
@@ -48,7 +53,7 @@ class Account
     /**
      * @return int
      */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
@@ -70,17 +75,17 @@ class Account
     }
 
     /**
-     * @return float
+     * @return int
      */
-    public function getAmount(): ?float
+    public function getAmount(): ?int
     {
         return $this->amount;
     }
 
     /**
-     * @param float $amount
+     * @param int $amount
      */
-    public function setAmount(float $amount): void
+    public function setAmount(int $amount): void
     {
         $this->amount = $amount;
     }

@@ -3,10 +3,10 @@ App\Entity\Commission:
   properties:
     id:
       expose: true
-      groups: [accountDetails]
+      groups: [walletDetails]
     type:
       expose: true
-      groups: [accountDetails]
+      groups: [walletDetails]
     value:
       expose: true
-      groups: [accountDetails]
+      groups: [walletDetails]

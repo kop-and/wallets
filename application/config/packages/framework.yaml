@@ -53,8 +53,8 @@ jms_serializer:
         debug: '%kernel.debug%'
         auto_detection: false
         directories:
-            app:
-                namespace_prefix: "App\\Entity"
+            App:
+                namespace_prefix: App\Entity
                 path: "%kernel.root_dir%/Resources/config/serializer"
     handlers:
         datetime:

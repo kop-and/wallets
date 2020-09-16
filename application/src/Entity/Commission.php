@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -9,7 +10,6 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Commission
 {
-    public const TYPE_TRANSACTION_ZERO = 0;
     public const TYPE_TRANSACTION_USER = 1;
 
     /**
@@ -27,21 +27,21 @@ class Commission
     private $type;
 
     /**
-     * @var float
+     * @var int
      *
-     * @ORM\Column(name="value", type="float")
+     * @ORM\Column(name="value", type="integer")
      */
     private $value;
 
     public function __construct()
     {
-        $this->type = $this::TYPE_TRANSACTION_USER;
+        $this->type = self::TYPE_TRANSACTION_USER;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
@@ -63,17 +63,17 @@ class Commission
     }
 
     /**
-     * @return float
+     * @return int
      */
-    public function getValue(): float
+    public function getValue(): int
     {
         return $this->value;
     }
 
     /**
-     * @param float $value
+     * @param int $value
      */
-    public function setValue(float $value): void
+    public function setValue(int $value): void
     {
         $this->value = $value;
     }

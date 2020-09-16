@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -14,6 +15,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class User implements UserInterface
 {
+    public const MAX_WALLETS = 10;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -112,28 +115,38 @@ class User implements UserInterface
     private $confirmationToken;
 
     /**
-     * @var ArrayCollection|Account[]
+     * @var ArrayCollection|Wallet[]
      *
-     * @ORM\OneToMany(targetEntity="App\Entity\Account", mappedBy="user",
+     * @ORM\OneToMany(targetEntity="Wallet", mappedBy="user",
      *     cascade={"all"})
      */
-    private $accounts;
+    private $wallets;
 
     public function __construct()
     {
-        $this->accounts = new ArrayCollection();
+        $this->wallets = new ArrayCollection();
     }
 
-    public function getId()
+    /**
+     * @return int
+     */
+    public function getId(): int
     {
         return $this->id;
     }
 
+    /**
+     * @return string|null
+     */
     public function getUsername(): ?string
     {
         return $this->username;
     }
 
+    /**
+     * @param string $username
+     * @return User
+     */
     public function setUsername(string $username): self
     {
         $this->username = $username;
@@ -141,11 +154,18 @@ class User implements UserInterface
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getPassword(): ?string
     {
         return $this->password;
     }
 
+    /**
+     * @param string $password
+     * @return User
+     */
     public function setPassword(string $password): self
     {
         $this->password = $password;
@@ -153,11 +173,18 @@ class User implements UserInterface
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getName(): ?string
     {
         return $this->name;
     }
 
+    /**
+     * @param string $name
+     * @return User
+     */
     public function setName(string $name): self
     {
         $this->name = $name;
@@ -165,11 +192,18 @@ class User implements UserInterface
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getEmail(): ?string
     {
         return $this->email;
     }
 
+    /**
+     * @param string $email
+     * @return User
+     */
     public function setEmail(string $email): self
     {
         $this->email = $email;
@@ -177,17 +211,26 @@ class User implements UserInterface
         return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getRoles(): array
     {
         return $this->roles;
     }
 
+    /**
+     * @param array $roles
+     */
     public function setRoles(array $roles)
     {
         $this->roles = $roles;
     }
 
-    public function getSalt()
+    /**
+     * @return string|null
+     */
+    public function getSalt(): ?string
     {
         return null;
     }
@@ -197,47 +240,74 @@ class User implements UserInterface
 
     }
 
-    public function getRetypedPassword()
+    /**
+     * @return string|null
+     */
+    public function getRetypedPassword(): ?string
     {
         return $this->retypedPassword;
     }
 
+    /**
+     * @param $retypedPassword
+     */
     public function setRetypedPassword($retypedPassword): void
     {
         $this->retypedPassword = $retypedPassword;
     }
 
+    /**
+     * @return string|null
+     */
     public function getNewPassword(): ?string
     {
         return $this->newPassword;
     }
 
+    /**
+     * @param $newPassword
+     */
     public function setNewPassword($newPassword): void
     {
         $this->newPassword = $newPassword;
     }
 
+    /**
+     * @return string|null
+     */
     public function getNewRetypedPassword(): ?string
     {
         return $this->newRetypedPassword;
     }
 
+    /**
+     * @param $newRetypedPassword
+     */
     public function setNewRetypedPassword($newRetypedPassword): void
     {
         $this->newRetypedPassword = $newRetypedPassword;
     }
 
+    /**
+     * @return string|null
+     */
     public function getOldPassword(): ?string
     {
         return $this->oldPassword;
     }
 
+    /**
+     * @param $oldPassword
+     */
     public function setOldPassword($oldPassword): void
     {
         $this->oldPassword = $oldPassword;
     }
 
-    public function getPasswordChangeDate()
+    /**
+     * @return mixed
+     */
+    public function getPasswordChangeDate(): ?int
     {
         return $this->passwordChangeDate;
     }
@@ -247,7 +317,10 @@ class User implements UserInterface
         $this->passwordChangeDate = $passwordChangeDate;
     }
 
-    public function getEnabled()
+    /**
+     * @return int|null
+     */
+    public function getEnabled(): ?int
     {
         return $this->enabled;
     }
@@ -257,7 +330,7 @@ class User implements UserInterface
         $this->enabled = $enabled;
     }
 
-    public function getConfirmationToken()
+    public function getConfirmationToken(): ?string
     {
         return $this->confirmationToken;
     }
@@ -273,53 +346,53 @@ class User implements UserInterface
     }
 
     /**
-     * @return array|Account[]
+     * @return array|Wallet[]
      */
-    public function getAccounts()
+    public function getwallets()
     {
-        return $this->accounts->toArray();
+        return $this->wallets->toArray();
     }
 
     /**
-     * @param array|Account[] $accounts
+     * @param array|Wallet[] $wallets
      *
-     * @return $this
+     * @return User
      */
-    public function setAccounts(array $accounts)
+    public function setwallets(array $wallets): self
     {
-        $this->accounts->clear();
+        $this->wallets->clear();
 
-        foreach ($accounts as $account) {
-            $this->addAccount($account);
+        foreach ($wallets as $wallet) {
+            $this->addWallet($wallet);
         }
 
         return $this;
     }
 
     /**
-     * @param Account $account
+     * @param Wallet $wallet
      *
-     * @return $this
+     * @return User
      */
-    public function addAccount(Account $account)
+    public function addWallet(Wallet $wallet): self
     {
-        if (!$this->accounts->contains($account)) {
-            $account->setUser($this);
-            $this->accounts->add($account);
+        if (!$this->wallets->contains($wallet)) {
+            $wallet->setUser($this);
+            $this->wallets->add($wallet);
         }
 
         return $this;
     }
 
     /**
-     * @param Account $account
+     * @param Wallet $wallet
      *
-     * @return $this
+     * @return User
      */
-    public function removeAccount(Account $account)
+    public function removeWallet(Wallet $wallet): self
     {
-        if ($this->accounts->contains($account)) {
-            $this->accounts->removeElement($account);
+        if ($this->wallets->contains($wallet)) {
+            $this->wallets->removeElement($wallet);
         }
 
         return $this;

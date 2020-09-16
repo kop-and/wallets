@@ -3,7 +3,7 @@
 namespace App\Tests\ControllerTests;
 
 
-use App\Entity\Account;
+use App\Entity\Wallet;
 use App\Tests\IntegrationTestBase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,8 +19,8 @@ class AccountControllerTest extends IntegrationTestBase
 
     public function testTransactionAccounts()
     {
-        $account1 = self::$entityManager->getRepository(Account::class)->findOneBy(['id' => 6]);
-        $account2 = self::$entityManager->getRepository(Account::class)->findOneBy(['id' => 7]);
+        $account1 = self::$entityManager->getRepository(Wallet::class)->findOneBy(['id' => 6]);
+        $account2 = self::$entityManager->getRepository(Wallet::class)->findOneBy(['id' => 7]);
 
         $requestData = [
             "fromAccount" => $account1->getId(),

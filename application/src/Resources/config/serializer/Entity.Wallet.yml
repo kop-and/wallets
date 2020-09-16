@@ -1,0 +1,15 @@
+App\Entity\Wallet:
+  exclusion_policy: all
+  properties:
+    id:
+      expose: true
+      groups: [walletDetails, userDetails, walletList]
+    number:
+      expose: true
+      groups: [walletDetails, userDetails, walletList]
+    amount:
+      expose: true
+      groups: [walletDetails, userDetails, walletList]
+    user:
+      expose: true
+      groups: [walletDetails]

@@ -2,7 +2,7 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Account;
+use App\Entity\Wallet;
 use App\Entity\Commission;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -22,16 +22,16 @@ class AppFixtures extends Fixture
             $user->setRoles(['']);
             $manager->persist($user);
 
-            $account = new Account();
-            $account->setUser($user);
-            $account->setNumber("$i$i$i$i$i$i$i" . rand(100000, 999999));
-            $account->setAmount(rand(50, 100));
-            $manager->persist($account);
+            $wallet = new Wallet();
+            $wallet->setUser($user);
+            $wallet->setNumber(base_convert(sha1(uniqid(mt_rand(), true)), 16, 36));
+            $wallet->setAmount(rand(50, 100));
+            $manager->persist($wallet);
         }
 
         $commission = new Commission();
         $commission->setType(Commission::TYPE_TRANSACTION_USER);
-        $commission->setValue(0.015);
+        $commission->setValue(15);
         $manager->persist($commission);
 
         $manager->flush();
