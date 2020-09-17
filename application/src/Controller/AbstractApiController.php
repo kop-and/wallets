@@ -3,7 +3,6 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
@@ -14,13 +13,12 @@ abstract class AbstractApiController extends AbstractController
     public const STATUS_ERROR = 'error';
 
     /**
-     *
-     * @param $content
+     * @param string $content
      * @param string $status
-     * @param $code
+     * @param int $code
      * @return JsonResponse
      */
-    public function getResponse($content, $status = self::STATUS_SUCCESS, $code = Response::HTTP_OK): JsonResponse
+    public function getResponse(string $content, string $status = self::STATUS_SUCCESS, int $code = Response::HTTP_OK): JsonResponse
     {
         return new JsonResponse(['status'  => $status, 'content' => $content], $code);
     }
@@ -62,31 +60,5 @@ abstract class AbstractApiController extends AbstractController
     protected function getValidationErrorResponse(ConstraintViolationListInterface $violations): JsonResponse
     {
         return $this->getResponse($this->getConstraintViolations($violations), self::STATUS_ERROR, Response::HTTP_BAD_REQUEST);
-    }
-
-    /**
-     * @param Request $request
-     * @param array $fields
-     * @return array
-     */
-    protected function getParamsFromRequest(Request $request, $fields = []): array
-    {
-        $params = [];
-        foreach ($fields as $field) {
-            if ($value = $request->get($field)) {
-                $params[$field] = $value;
-            }
-        }
-
-        return $params;
-    }
-
-    /**
-     * @param mixed $objects
-     * @return string
-     */
-    protected function serialize($objects): string
-    {
-        return $this->container->get('jms_serializer')->serialize($objects, 'json');
     }
 }

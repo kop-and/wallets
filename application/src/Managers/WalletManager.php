@@ -86,17 +86,6 @@ class WalletManager
      */
     public function transferAmount(int $fromWalletId, int $toWalletId, int $amountTransfer): bool
     {
-        /** @var Wallet $fromWallet */
-        $fromWallet = $this->walletRepository->find($fromWalletId);
-        if (!$fromWallet) {
-            throw new NotFoundHttpException('From Wallet was not found');
-        }
-        /** @var Wallet $toWallet */
-        $toWallet = $this->walletRepository->find($toWalletId);
-        if (!$toWallet) {
-            throw new NotFoundHttpException('To Wallet was not found');
-        }
-
         /** @var Commission $commission */
         $commission = $this->commissionRepository->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
 
@@ -104,17 +93,6 @@ class WalletManager
             $amountTransfer,
             $commission->getValue()
         );
-
-        if ($fromWallet->getAmount() < $amount) {
-            throw new MethodNotAllowedHttpException(
-                [],
-                'The transfer amount is too large, there is not enough amount on the wallet'
-            );
-        }
-
-        if ($fromWallet->getId() === $toWallet->getId()) {
-            throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
-        }
 
         $this->transfer($fromWalletId, $toWalletId, $amountTransfer, $amount);
 
@@ -135,6 +113,21 @@ class WalletManager
         $fromWallet = $this->walletRepository->find($fromWalletId, LockMode::PESSIMISTIC_WRITE);
         /** @var Wallet $toWallet */
         $toWallet = $this->walletRepository->find($toWalletId, LockMode::PESSIMISTIC_WRITE);
+        if (!$fromWallet) {
+            throw new NotFoundHttpException('From Wallet was not found');
+        }
+        if (!$toWallet) {
+            throw new NotFoundHttpException('To Wallet was not found');
+        }
+        if ($fromWallet->getAmount() < $amount) {
+            throw new MethodNotAllowedHttpException(
+                [],
+                'The transfer amount is too large, there is not enough amount on the wallet'
+            );
+        }
+        if ($fromWallet->getId() === $toWallet->getId()) {
+            throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
+        }
         try {
             $fromWallet->setAmount($fromWallet->getAmount() - $amount);
             $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);
