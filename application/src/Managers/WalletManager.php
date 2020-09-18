@@ -109,25 +109,31 @@ class WalletManager
     private function transfer(int $fromWalletId, int $toWalletId, int $amountTransfer, int $amount): void
     {
         $this->em->beginTransaction();
+        
         /** @var Wallet $fromWallet */
         $fromWallet = $this->walletRepository->find($fromWalletId, LockMode::PESSIMISTIC_WRITE);
         /** @var Wallet $toWallet */
         $toWallet = $this->walletRepository->find($toWalletId, LockMode::PESSIMISTIC_WRITE);
+        
         if (!$fromWallet) {
             throw new NotFoundHttpException('From Wallet was not found');
         }
+        
         if (!$toWallet) {
             throw new NotFoundHttpException('To Wallet was not found');
         }
+        
         if ($fromWallet->getAmount() < $amount) {
             throw new MethodNotAllowedHttpException(
                 [],
                 'The transfer amount is too large, there is not enough amount on the wallet'
             );
         }
+        
         if ($fromWallet->getId() === $toWallet->getId()) {
             throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
         }
+        
         try {
             $fromWallet->setAmount($fromWallet->getAmount() - $amount);
             $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);
