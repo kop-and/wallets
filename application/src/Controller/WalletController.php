@@ -59,23 +59,18 @@ class WalletController extends AbstractApiController
      * @param Request $request
      * @param WalletManager $walletManager
      * @return JsonResponse
-     * @throws \Throwable
      */
     public function transactionWalletsAction(
         Request $request,
         WalletManager $walletManager
     ): JsonResponse
     {
-        try {
-            $walletManager->transferAmount(
-                $request->request->get('fromWallet'),
-                $request->request->get('toWallet'),
-                $request->request->get('amount')
-            );
-        } catch (\Exception $exception) {
-            return new JsonResponse($exception->getMessage(), Response::HTTP_BAD_REQUEST);
-        }
+        $transferResponse = $walletManager->transferAmount(
+            $request->request->get('fromWallet'),
+            $request->request->get('toWallet'),
+            $request->request->get('amount')
+        );
 
-        return new JsonResponse(['success' => true]);
+        return new JsonResponse($transferResponse['message'], $transferResponse['code']);
     }
 }
