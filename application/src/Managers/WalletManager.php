@@ -12,8 +12,8 @@ use App\Repository\WalletRepository;
 use App\Services\CalculationTransfer;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class WalletManager
 {
@@ -71,6 +71,8 @@ class WalletManager
             );
         }
         $wallet->setUser($user);
+        $wallet->setAmount(Wallet::BONUS);
+
         $this->em->persist($wallet);
         $this->em->flush();
 
@@ -81,9 +83,10 @@ class WalletManager
      * @param int $fromWalletId
      * @param int $toWalletId
      * @param int $amountTransfer
-     * @return array
+     * @return bool
+     * @throws \Throwable
      */
-    public function transferAmount(int $fromWalletId, int $toWalletId, int $amountTransfer): array
+    public function transferAmount(int $fromWalletId, int $toWalletId, int $amountTransfer): bool
     {
         /** @var Commission $commission */
         $commission = $this->commissionRepository->findOneBy(['type' => Commission::TYPE_TRANSACTION_USER]);
@@ -93,7 +96,9 @@ class WalletManager
             $commission->getValue()
         );
 
-        return $this->transfer($fromWalletId, $toWalletId, $amountTransfer, $amount);
+        $this->transfer($fromWalletId, $toWalletId, $amountTransfer, $amount);
+
+        return true;
     }
 
     /**
@@ -101,46 +106,37 @@ class WalletManager
      * @param int $toWalletId
      * @param int $amountTransfer
      * @param int $amount
-     * @return array
+     * @throws \Throwable
      */
-    private function transfer(int $fromWalletId, int $toWalletId, int $amountTransfer, int $amount): array
+    private function transfer(int $fromWalletId, int $toWalletId, int $amountTransfer, int $amount): void
     {
-        $this->em->beginTransaction();
-        
-        /** @var Wallet $fromWallet */
-        $fromWallet = $this->walletRepository->find($fromWalletId, LockMode::PESSIMISTIC_WRITE);
-        /** @var Wallet $toWallet */
-        $toWallet = $this->walletRepository->find($toWalletId, LockMode::PESSIMISTIC_WRITE);
-        
-        if (!$fromWallet) {
-            return [
-                'code' => Response::HTTP_NOT_FOUND,
-                'message' => 'From Wallet was not found'
-            ];
-        }
-        
-        if (!$toWallet) {
-            return [
-                'code' => Response::HTTP_NOT_FOUND,
-                'message' => 'To Wallet was not found'
-            ];
-        }
-        
-        if ($fromWallet->getAmount() < $amount) {
-            return [
-                'code' => Response::HTTP_METHOD_NOT_ALLOWED,
-                'message' => 'The transfer amount is too large, there is not enough amount on the wallet'
-            ];
-        }
-        
-        if ($fromWallet->getId() === $toWallet->getId()) {
-            return [
-                'code' => Response::HTTP_METHOD_NOT_ALLOWED,
-                'message' => 'An attempt to transfer to your own wallet'
-            ];
-        }
-        
         try {
+            $this->em->beginTransaction();
+
+            /** @var Wallet $fromWallet */
+            $fromWallet = $this->walletRepository->find($fromWalletId, LockMode::PESSIMISTIC_WRITE);
+            /** @var Wallet $toWallet */
+            $toWallet = $this->walletRepository->find($toWalletId, LockMode::PESSIMISTIC_WRITE);
+
+            if (!$fromWallet) {
+                throw new NotFoundHttpException('From Wallet was not found');
+            }
+
+            if (!$toWallet) {
+                throw new NotFoundHttpException('To Wallet was not found');
+            }
+
+            if ($fromWallet->getAmount() < $amount) {
+                throw new MethodNotAllowedHttpException(
+                    [],
+                    'The transfer amount is too large, there is not enough amount on the wallet'
+                );
+            }
+
+            if ($fromWallet->getId() === $toWallet->getId()) {
+                throw new MethodNotAllowedHttpException([], 'An attempt to transfer to your own wallet');
+            }
+
             $fromWallet->setAmount($fromWallet->getAmount() - $amount);
             $toWallet->setAmount($toWallet->getAmount() + $amountTransfer);
 
@@ -162,15 +158,7 @@ class WalletManager
         } catch (\Throwable $exception) {
             $this->em->rollBack();
 
-            return [
-                'code' => Response::HTTP_BAD_REQUEST,
-                'message' => $exception->getMessage()
-            ];
+            throw $exception;
         }
-
-        return [
-            'code' => Response::HTTP_OK,
-            'message' => 'success'
-        ];
     }
 }

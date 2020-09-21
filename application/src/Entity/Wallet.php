@@ -14,6 +14,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class Wallet
 {
+    public const BONUS = 10;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
