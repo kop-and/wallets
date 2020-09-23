@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\TransactionsRepository")
@@ -13,6 +14,7 @@ class Transaction
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({""})
      */
     private $id;
 
@@ -21,6 +23,7 @@ class Transaction
      *
      * @ORM\ManyToOne(targetEntity="App\Entity\Wallet", inversedBy="ransactions")
      * @ORM\JoinColumn(name="wallet_id", referencedColumnName="id", nullable=true)
+     * @Groups({""})
      */
     private $wallet;
 
@@ -28,6 +31,7 @@ class Transaction
      * @var int
      *
      * @ORM\Column(name="amount", type="integer")
+     * @Groups({""})
      */
     private $amount;
 

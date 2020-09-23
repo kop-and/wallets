@@ -7,8 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
-use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use JMS\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
@@ -21,6 +21,7 @@ class User implements UserInterface
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"userDetails", "userList", "walletDetails"})
      */
     private $id;
 
@@ -28,6 +29,7 @@ class User implements UserInterface
      * @ORM\Column(type="string", length=255)
      * @Assert\NotBlank(groups={"post"})
      * @Assert\Length(min=6, max=255, groups={"post"})
+     * @Groups({"userDetails", "userList", "walletDetails"})
      */
     private $username;
 
@@ -39,6 +41,7 @@ class User implements UserInterface
      *     message="Password must be seven characters long and contain at least one digit, one upper case letter and one lower case letter",
      *     groups={"post"}
      * )
+     * @Groups({""})
      */
     private $password;
 
@@ -49,6 +52,7 @@ class User implements UserInterface
      *     message="Passwords does not match",
      *     groups={"post"}
      * )
+     * @Groups({""})
      */
     private $retypedPassword;
 
@@ -59,6 +63,7 @@ class User implements UserInterface
      *     message="Password must be seven characters long and contain at least one digit, one upper case letter and one lower case letter",
      *     groups={"put-reset-password"}
      * )
+     * @Groups({""})
      */
     private $newPassword;
 
@@ -69,12 +74,14 @@ class User implements UserInterface
      *     message="Passwords does not match",
      *     groups={"put-reset-password"}
      * )
+     * @Groups({""})
      */
     private $newRetypedPassword;
 
     /**
      * @Assert\NotBlank(groups={"put-reset-password"})
      * @UserPassword(groups={"put-reset-password"})
+     * @Groups({""})
      */
     private $oldPassword;
 
@@ -82,6 +89,7 @@ class User implements UserInterface
      * @ORM\Column(type="string", length=255)
      * @Assert\NotBlank(groups={"post"})
      * @Assert\Length(min=5, max=255, groups={"post", "put"})
+     * @Groups({"userDetails"})
      */
     private $name;
 
@@ -90,27 +98,32 @@ class User implements UserInterface
      * @Assert\NotBlank(groups={"post"})
      * @Assert\Email(groups={"post", "put"})
      * @Assert\Length(min=6, max=255, groups={"post", "put"})
+     * @Groups({"userDetails"})
      */
     private $email;
 
     /**
      * @ORM\Column(type="simple_array", length=200)
      * @Groups({"get-admin", "get-owner"})
+     * @Groups({"userDetails"})
      */
     private $roles;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
+     * @Groups({""})
      */
     private $passwordChangeDate;
 
     /**
      * @ORM\Column(type="boolean")
+     * @Groups({"userDetails"})
      */
     private $enabled;
 
     /**
      * @ORM\Column(type="string", length=40, nullable=true)
+     * @Groups({""})
      */
     private $confirmationToken;
 
@@ -118,6 +131,7 @@ class User implements UserInterface
      * @var ArrayCollection|Wallet[]
      *
      * @ORM\OneToMany(targetEntity="App\Entity\Wallet", mappedBy="user")
+     * @Groups({"userDetails"})
      */
     private $wallets;
 

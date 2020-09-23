@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\CommissionRepository")
@@ -16,6 +17,7 @@ class Commission
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"walletDetails"})
      */
     private $id;
 
@@ -23,6 +25,7 @@ class Commission
      * @var int
      *
      * @ORM\Column(name="type", type="integer")
+     * @Groups({"walletDetails"})
      */
     private $type;
 
@@ -30,6 +33,7 @@ class Commission
      * @var int
      *
      * @ORM\Column(name="value", type="integer")
+     * @Groups({"walletDetails"})
      */
     private $value;
 

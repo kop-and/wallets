@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use JMS\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\WalletRepository")
@@ -20,6 +21,7 @@ class Wallet
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"userDetails", "userList", "walletDetails", "walletList"})
      */
     private $id;
 
@@ -30,6 +32,8 @@ class Wallet
      *
      * @Assert\NotBlank
      * @Assert\Length(min=10, max=30)
+     *
+     * @Groups({"userDetails", "userList", "walletDetails", "walletList"})
      */
     private $number;
 
@@ -37,6 +41,8 @@ class Wallet
      * @var int
      *
      * @ORM\Column(name="amount", type="integer")
+     *
+     * @Groups({"userDetails", "userList", "walletDetails", "walletList"})
      */
     private $amount;
 
@@ -45,6 +51,8 @@ class Wallet
      *
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="wallets")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=true)
+     *
+     * @Groups({"walletDetails"})
      */
     private $user;
 

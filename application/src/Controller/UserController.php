@@ -8,6 +8,8 @@ use App\Managers\WalletManager;
 use FOS\RestBundle\Controller\Annotations\Get;
 use App\Entity\User;
 use App\Repository\UserRepository;
+use JMS\Serializer\SerializationContext;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,11 +33,21 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param User $user
+     * @param SerializerInterface $serializer
      * @return JsonResponse
      */
-    public function getUserAction(User $user): JsonResponse
+    public function getUserAction(
+        User $user,
+        SerializerInterface $serializer
+    ): JsonResponse
     {
-        return new JsonResponse($user);
+        $response = $serializer->serialize(
+            $user,
+            'json',
+            SerializationContext::create()->setGroups(['userDetails'])->setSerializeNull(true)
+        );
+
+        return new JsonResponse($response);
     }
 
     /**
@@ -46,13 +58,21 @@ class UserController extends AbstractApiController
      * @SWG\Tag(name="users")
      *
      * @param UserRepository $repository
+     * @param SerializerInterface $serializer
      * @return JsonResponse
      */
     public function getUsersAction(
-        UserRepository $repository
+        UserRepository $repository,
+        SerializerInterface $serializer
     ): JsonResponse
     {
-        return new JsonResponse($repository->findAll());
+        $response = $serializer->serialize(
+            $repository->findAll(),
+            'json',
+            SerializationContext::create()->setGroups(['userList'])->setSerializeNull(true)
+        );
+
+        return new JsonResponse($response);
     }
 
     /**
@@ -76,13 +96,15 @@ class UserController extends AbstractApiController
      * @param User $user
      * @param WalletManager $walletManager
      * @param ValidatorInterface $validator
+     * @param SerializerInterface $serializer
      * @return JsonResponse
      */
     public function addWalletAction(
         Request $request,
         User $user,
         WalletManager $walletManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        SerializerInterface $serializer
     ): JsonResponse
     {
         $wallet = new Wallet();
@@ -102,6 +124,12 @@ class UserController extends AbstractApiController
             return new JsonResponse($exception->getMessage(), Response::HTTP_METHOD_NOT_ALLOWED);
         }
 
-        return new JsonResponse($newWallet);
+        $response = $serializer->serialize(
+            $newWallet,
+            'json',
+            SerializationContext::create()->setGroups(['userDetails'])->setSerializeNull(true)
+        );
+
+        return new JsonResponse($response);
     }
 }
